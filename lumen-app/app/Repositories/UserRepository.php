@@ -5,7 +5,6 @@ namespace App\Repositories;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Random\RandomException;
 use stdClass;
 use Ramsey\Uuid\Uuid;
 
