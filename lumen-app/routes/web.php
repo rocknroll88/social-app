@@ -29,3 +29,4 @@ $router->get('/debug/db', function () {
 $router->post('/login', 'AuthController@login');
 $router->post('/user/register', 'UserController@register');
 $router->get('/user/get/{id}', 'UserController@get');
+$router->get('/user/search', 'UserController@search');

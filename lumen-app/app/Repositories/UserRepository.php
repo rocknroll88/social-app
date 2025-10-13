@@ -82,4 +82,36 @@ class UserRepository
 
         return $token;
     }
+
+    /**
+     * Поиск анкет по частям имени и фамилии.
+     *
+     * @param string $firstNamePart  Часть имени (из запроса first_name)
+     * @param string $lastNamePart   Часть фамилии (из запроса last_name)
+     * @param int    $limit          Максимум записей на страницу
+     * @param int    $offset         Смещение (для пагинации)
+     *
+     * @return array<int, stdClass>
+     */
+    public function searchByName(string $firstNamePart, string $lastNamePart, int $limit = 50, int $offset = 0): array
+    {
+        $escape = static function (string $s): string {
+            return addcslashes(trim($s), '\\%_');
+        };
+
+        $first = $escape($firstNamePart) . '%';
+        $last  = $escape($lastNamePart)  . '%';
+
+        $rows = DB::table('users')
+            ->select('user_id as id', 'first_name', 'second_name', 'birthdate', 'biography', 'city')
+            ->where('first_name', 'LIKE', $first)
+            ->where('second_name', 'LIKE', $last)
+            ->orderBy('second_name')
+            ->orderBy('first_name')
+            ->limit($limit)
+            ->offset($offset)
+            ->get();
+
+        return $rows->toArray();
+    }
 }
