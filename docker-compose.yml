@@ -79,5 +79,36 @@ services:
     depends_on:
       - db
 
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./volumes/prometheus:/etc/prometheus
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    privileged: true
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    command:
+      - "--docker_only=true"
+      - "--store_container_labels=true"
+      - "--whitelisted_container_labels=io.kubernetes.container.name,com.docker.compose.service,name,container_name,io.kubernetes.pod.name"
+
+  node-exporter:
+    image: prom/node-exporter
+    container_name: node_exporter
+    ports:
+      - "9100:9100"
+
 volumes:
   pgdata:

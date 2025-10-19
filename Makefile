@@ -31,3 +31,6 @@ psql:
 # Подключение в Grafana (bash внутрь)
 grafana:
 	$(COMPOSE) exec grafana sh
+
+migrate:
+	$(COMPOSE) exec app php artisan migrate --force
