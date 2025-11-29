@@ -1,0 +1,468 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Social Network API",
+        "description": "API для социальной сети",
+        "contact": {
+            "email": "support@social-network.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/",
+            "description": "API Server"
+        }
+    ],
+    "paths": {
+        "/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Упрощенный процесс аутентификации",
+                "description": "Упрощенный процесс аутентификации путем передачи идентификатор пользователя и получения токена для дальнейшего прохождения авторизации",
+                "operationId": "2dd578ff7aba2721293dac66833b27d1",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "Идентификатор пользователя",
+                                        "type": "string",
+                                        "example": "e4d2e6b0-cde2-42c5-aac3-0b8316f21e58"
+                                    },
+                                    "password": {
+                                        "description": "Пароль",
+                                        "type": "string",
+                                        "example": "Секретная строка"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Успешная аутентификация",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "token": {
+                                            "type": "string",
+                                            "example": "e4d2e6b0-cde2-42c5-aac3-0b8316f21e58"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидные данные"
+                    },
+                    "404": {
+                        "description": "Пользователь не найден"
+                    },
+                    "500": {
+                        "description": "Ошибка сервера"
+                    },
+                    "503": {
+                        "description": "Ошибка сервера"
+                    }
+                }
+            }
+        },
+        "/friend/set/{user_id}": {
+            "put": {
+                "tags": [
+                    "Friends"
+                ],
+                "summary": "Добавить пользователя в друзья",
+                "description": "Пользователь успешно указал своего друга",
+                "operationId": "1d4b2f673f8f82207c7847a265d39b42",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "path",
+                        "description": "Идентификатор пользователя",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "e4d2e6b0-cde2-42c5-aac3-0b8316f21e58"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пользователь успешно указал своего друга"
+                    },
+                    "400": {
+                        "description": "Невалидные данные ввода"
+                    },
+                    "401": {
+                        "description": "Неавторизованный доступ"
+                    },
+                    "500": {
+                        "description": "Ошибка сервера"
+                    },
+                    "503": {
+                        "description": "Ошибка сервера"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/friend/delete/{user_id}": {
+            "put": {
+                "tags": [
+                    "Friends"
+                ],
+                "summary": "Удалить пользователя из друзей",
+                "description": "Пользователь успешно удалил из друзей пользователя",
+                "operationId": "1caa71f87bbe53ff6603662710f61622",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "path",
+                        "description": "Идентификатор пользователя",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "e4d2e6b0-cde2-42c5-aac3-0b8316f21e58"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пользователь успешно удалил из друзей пользователя"
+                    },
+                    "400": {
+                        "description": "Невалидные данные ввода"
+                    },
+                    "401": {
+                        "description": "Неавторизованный доступ"
+                    },
+                    "500": {
+                        "description": "Ошибка сервера"
+                    },
+                    "503": {
+                        "description": "Ошибка сервера"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/user/register": {
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Регистрация пользователя",
+                "description": "Создание нового пользователя в системе",
+                "operationId": "d25ccfe75d772272fa3e5adbe0636701",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "second_name",
+                                    "birthdate",
+                                    "biography",
+                                    "city",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "description": "Имя",
+                                        "type": "string",
+                                        "example": "Имя"
+                                    },
+                                    "second_name": {
+                                        "description": "Фамилия",
+                                        "type": "string",
+                                        "example": "Фамилия"
+                                    },
+                                    "birthdate": {
+                                        "description": "Дата рождения",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2017-02-01"
+                                    },
+                                    "biography": {
+                                        "description": "Биография",
+                                        "type": "string",
+                                        "example": "Хобби, интересы и т.п."
+                                    },
+                                    "city": {
+                                        "description": "Город",
+                                        "type": "string",
+                                        "example": "Москва"
+                                    },
+                                    "password": {
+                                        "description": "Пароль",
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "Секретная строка"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Успешная регистрация",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "user_id": {
+                                            "type": "string",
+                                            "example": "e4d2e6b0-cde2-42c5-aac3-0b8316f21e58"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидные данные"
+                    },
+                    "500": {
+                        "description": "Ошибка сервера"
+                    },
+                    "503": {
+                        "description": "Ошибка сервера"
+                    }
+                }
+            }
+        },
+        "/user/get/{id}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Получение анкеты пользователя",
+                "description": "Получение информации о пользователе по его ID",
+                "operationId": "ad46c596e908cf6f5471366af5695548",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Идентификатор пользователя",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "550e8400-e29b-41d4-a716-446655440000"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешное получение анкеты пользователя",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "example": "550e8400-e29b-41d4-a716-446655440000"
+                                        },
+                                        "first_name": {
+                                            "type": "string",
+                                            "example": "Имя"
+                                        },
+                                        "second_name": {
+                                            "type": "string",
+                                            "example": "Фамилия"
+                                        },
+                                        "birthdate": {
+                                            "type": "string",
+                                            "format": "date",
+                                            "example": "2017-02-01"
+                                        },
+                                        "biography": {
+                                            "type": "string",
+                                            "example": "Хобби, интересы и т.п."
+                                        },
+                                        "city": {
+                                            "type": "string",
+                                            "example": "Москва"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидные данные"
+                    },
+                    "404": {
+                        "description": "Анкета не найдена"
+                    },
+                    "500": {
+                        "description": "Ошибка сервера"
+                    },
+                    "503": {
+                        "description": "Ошибка сервера"
+                    }
+                }
+            }
+        },
+        "/user/search": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Поиск анкет",
+                "description": "Поиск пользователей по имени и фамилии с поддержкой пагинации",
+                "operationId": "7a06c26838c5253e9f6a9d92831e7e12",
+                "parameters": [
+                    {
+                        "name": "first_name",
+                        "in": "query",
+                        "description": "Условие поиска по имени",
+                        "required": true,
+                        "schema": {
+                            "description": "Часть имени для поиска",
+                            "type": "string",
+                            "example": "Конст"
+                        }
+                    },
+                    {
+                        "name": "last_name",
+                        "in": "query",
+                        "description": "Условие поиска по фамилии",
+                        "required": true,
+                        "schema": {
+                            "description": "Часть фамилии для поиска",
+                            "type": "string",
+                            "example": "Оси"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Количество записей (от 1 до 100, по умолчанию 50)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 50,
+                            "maximum": 100,
+                            "minimum": 1,
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Смещение (от 0, по умолчанию 0)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 0,
+                            "minimum": 0,
+                            "example": 0
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешные поиск пользователя",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "string",
+                                                "example": "550e8400-e29b-41d4-a716-446655440000"
+                                            },
+                                            "first_name": {
+                                                "type": "string",
+                                                "example": "Имя"
+                                            },
+                                            "second_name": {
+                                                "type": "string",
+                                                "example": "Фамилия"
+                                            },
+                                            "birthdate": {
+                                                "type": "string",
+                                                "format": "date",
+                                                "example": "2017-02-01"
+                                            },
+                                            "biography": {
+                                                "type": "string",
+                                                "example": "Хобби, интересы и т.п."
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Москва"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидные данные"
+                    },
+                    "500": {
+                        "description": "Ошибка сервера"
+                    },
+                    "503": {
+                        "description": "Ошибка сервера"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "Authentication"
+        },
+        {
+            "name": "Friends",
+            "description": "Friends"
+        },
+        {
+            "name": "Users",
+            "description": "Users"
+        }
+    ]
+}

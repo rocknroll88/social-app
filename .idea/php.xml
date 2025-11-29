@@ -118,9 +118,15 @@
       <path value="$PROJECT_DIR$/lumen-app/vendor/phpunit/phpunit" />
       <path value="$PROJECT_DIR$/lumen-app/vendor/phpunit/php-timer" />
       <path value="$PROJECT_DIR$/lumen-app/vendor/phar-io/version" />
+      <path value="$PROJECT_DIR$/lumen-app/vendor/psr/cache" />
+      <path value="$PROJECT_DIR$/lumen-app/vendor/symfony/yaml" />
+      <path value="$PROJECT_DIR$/lumen-app/vendor/zircote/swagger-php" />
+      <path value="$PROJECT_DIR$/lumen-app/vendor/swagger-api/swagger-ui" />
+      <path value="$PROJECT_DIR$/lumen-app/vendor/doctrine/annotations" />
+      <path value="$PROJECT_DIR$/lumen-app/vendor/darkaonline/swagger-lume" />
     </include_path>
   </component>
-  <component name="PhpProjectSharedConfiguration" php_language_level="8.1" />
+  <component name="PhpProjectSharedConfiguration" php_language_level="8.3" />
   <component name="PhpStanOptionsConfiguration">
     <option name="transferred" value="true" />
   </component>

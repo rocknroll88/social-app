@@ -63,6 +63,8 @@ $app->configure('app');
 
 $app->configure('database');
 
+$app->configure('swagger-lume');
+
 /*
 |--------------------------------------------------------------------------
 | Register Middleware
@@ -78,9 +80,9 @@ $app->configure('database');
 //     App\Http\Middleware\ExampleMiddleware::class
 // ]);
 
-// $app->routeMiddleware([
-//     'auth' => App\Http\Middleware\Authenticate::class,
-// ]);
+$app->routeMiddleware([
+    'auth' => App\Http\Middleware\BearerAuthMiddleware::class,
+]);
 
 /*
 |--------------------------------------------------------------------------
@@ -96,6 +98,7 @@ $app->configure('database');
  $app->register(App\Providers\AppServiceProvider::class);
 // $app->register(App\Providers\AuthServiceProvider::class);
 // $app->register(App\Providers\EventServiceProvider::class);
+$app->register(\SwaggerLume\ServiceProvider::class);
 
 /*
 |--------------------------------------------------------------------------

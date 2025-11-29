@@ -5,8 +5,7 @@ namespace App\Http\Controllers;
 use App\Repositories\UserRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Random\RandomException;
+use OpenApi\Annotations as OA;
 
 class UserController extends Controller
 {
@@ -18,8 +17,45 @@ class UserController extends Controller
     }
 
     /**
-     * @param Request $request
+     * @OA\Post(
+     *     path="/user/register",
+     *     summary="Регистрация пользователя",
+     *     description="Создание нового пользователя в системе",
+     *     tags={"Users"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"first_name", "second_name", "birthdate", "biography", "city", "password"},
+     *             @OA\Property(property="first_name", type="string", example="Имя", description="Имя"),
+     *             @OA\Property(property="second_name", type="string", example="Фамилия", description="Фамилия"),
+     *             @OA\Property(property="birthdate", type="string", format="date", example="2017-02-01", description="Дата рождения"),
+     *             @OA\Property(property="biography", type="string", example="Хобби, интересы и т.п.", description="Биография"),
+     *             @OA\Property(property="city", type="string", example="Москва", description="Город"),
+     *             @OA\Property(property="password", type="string", format="password", example="Секретная строка", description="Пароль")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Успешная регистрация",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="user_id", type="string", example="e4d2e6b0-cde2-42c5-aac3-0b8316f21e58")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Невалидные данные"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Ошибка сервера"
+     *     ),
+     *     @OA\Response(
+     *         response=503,
+     *         description="Ошибка сервера"
+     *     )
+     * )
      *
+     * @param Request $request
      * @return JsonResponse
      */
     public function register(Request $request): JsonResponse
@@ -34,15 +70,55 @@ class UserController extends Controller
 
         return response()->json([
             'user_id' => $userId
-        ], 201);
+        ], 200);
     }
 
     /**
-     * @param string $id
+     * @OA\Get(
+     *     path="/user/get/{id}",
+     *     summary="Получение анкеты пользователя",
+     *     description="Получение информации о пользователе по его ID",
+     *     tags={"Users"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Идентификатор пользователя",
+     *         required=true,
+     *         @OA\Schema(type="string", example="550e8400-e29b-41d4-a716-446655440000")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Успешное получение анкеты пользователя",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="id", type="string", example="550e8400-e29b-41d4-a716-446655440000"),
+     *             @OA\Property(property="first_name", type="string", example="Имя"),
+     *             @OA\Property(property="second_name", type="string", example="Фамилия"),
+     *             @OA\Property(property="birthdate", type="string", format="date", example="2017-02-01"),
+     *             @OA\Property(property="biography", type="string", example="Хобби, интересы и т.п."),
+     *             @OA\Property(property="city", type="string", example="Москва")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Невалидные данные"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Анкета не найдена"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Ошибка сервера"
+     *     ),
+     *     @OA\Response(
+     *         response=503,
+     *         description="Ошибка сервера"
+     *     )
+     * )
      *
+     * @param string $id
      * @return JsonResponse
      */
-
     public function get(string $id): JsonResponse
     {
         $user = $this->userRepository->findById($id);
@@ -55,6 +131,68 @@ class UserController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/user/search",
+     *     summary="Поиск анкет",
+     *     description="Поиск пользователей по имени и фамилии с поддержкой пагинации",
+     *     tags={"Users"},
+     *     @OA\Parameter(
+     *         name="first_name",
+     *         in="query",
+     *         description="Условие поиска по имени",
+     *         required=true,
+     *         @OA\Schema(type="string", description="Часть имени для поиска", example="Конст")
+     *     ),
+     *     @OA\Parameter(
+     *         name="last_name",
+     *         in="query",
+     *         description="Условие поиска по фамилии",
+     *         required=true,
+     *         @OA\Schema(type="string", description="Часть фамилии для поиска", example="Оси")
+     *     ),
+     *     @OA\Parameter(
+     *         name="limit",
+     *         in="query",
+     *         description="Количество записей (от 1 до 100, по умолчанию 50)",
+     *         required=false,
+     *         @OA\Schema(type="integer", minimum=1, maximum=100, default=50, example=10)
+     *     ),
+     *     @OA\Parameter(
+     *         name="offset",
+     *         in="query",
+     *         description="Смещение (от 0, по умолчанию 0)",
+     *         required=false,
+     *         @OA\Schema(type="integer", minimum=0, default=0, example=0)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Успешные поиск пользователя",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 @OA\Property(property="id", type="string", example="550e8400-e29b-41d4-a716-446655440000"),
+     *                 @OA\Property(property="first_name", type="string", example="Имя"),
+     *                 @OA\Property(property="second_name", type="string", example="Фамилия"),
+     *                 @OA\Property(property="birthdate", type="string", format="date", example="2017-02-01"),
+     *                 @OA\Property(property="biography", type="string", example="Хобби, интересы и т.п."),
+     *                 @OA\Property(property="city", type="string", example="Москва")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Невалидные данные"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Ошибка сервера"
+     *     ),
+     *     @OA\Response(
+     *         response=503,
+     *         description="Ошибка сервера"
+     *     )
+     * )
+     *
      * GET /user/search — Поиск анкет
      *
      * Необязательные query-параметры:

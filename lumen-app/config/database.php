@@ -6,17 +6,7 @@ return [
     'connections' => [
         'pgsql' => [
             'driver'   => 'pgsql',
-            'write' => [
-                'host' => [
-                    env('DB_MASTER_HOST', env('DB_HOST', '127.0.0.1')),
-                ],
-            ],
-            'read' => [
-                'host' => array_filter([
-                    env('DB_SLAVE1_HOST'),
-                    env('DB_SLAVE2_HOST'),
-                ]),
-            ],
+            'host'     => env('DB_HOST', '127.0.0.1'),
             'port'     => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'social'),
             'username' => env('DB_USERNAME', 'postgres'),

@@ -28,5 +28,19 @@ $router->get('/debug/db', function () {
 
 $router->post('/login', 'AuthController@login');
 $router->post('/user/register', 'UserController@register');
+
+// Публичные методы (не требуют авторизации согласно спецификации)
 $router->get('/user/get/{id}', 'UserController@get');
 $router->get('/user/search', 'UserController@search');
+
+// Защищенные методы (требуют Bearer токен)
+$router->group(['middleware' => 'auth'], function () use ($router) {
+    // Друзья
+    $router->put('/friend/set/{user_id}', 'FriendController@set');
+    $router->put('/friend/delete/{user_id}', 'FriendController@delete');
+});
+
+// Swagger Documentation Routes
+$router->get('/api/documentation', function () use ($router) {
+    return redirect('/api/documentation/index.html');
+});
