@@ -169,6 +169,315 @@
                 ]
             }
         },
+        "/post/create": {
+            "post": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Создание поста",
+                "description": "Создание нового поста",
+                "operationId": "4801fc36024d73781c07edae577817a2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "text"
+                                ],
+                                "properties": {
+                                    "text": {
+                                        "description": "Текст поста",
+                                        "type": "string",
+                                        "example": "Lorem ipsum dolor sit amet, consectetur adipiscing elit..."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Успешно создан пост",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "post_id": {
+                                            "type": "string",
+                                            "example": "1d535fd6-7521-4cb1-aa6d-031be7123c4d"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидные данные ввода"
+                    },
+                    "401": {
+                        "description": "Неавторизованный доступ"
+                    },
+                    "500": {
+                        "description": "Ошибка сервера"
+                    },
+                    "503": {
+                        "description": "Ошибка сервера"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/post/update": {
+            "put": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Изменение поста",
+                "description": "Обновление существующего поста",
+                "operationId": "fcbc4169182fb510187627938d46f08e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "text"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "Идентификатор поста",
+                                        "type": "string",
+                                        "example": "1d535fd6-7521-4cb1-aa6d-031be7123c4d"
+                                    },
+                                    "text": {
+                                        "description": "Текст поста",
+                                        "type": "string",
+                                        "example": "Lorem ipsum dolor sit amet..."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Успешно изменен пост"
+                    },
+                    "400": {
+                        "description": "Невалидные данные ввода"
+                    },
+                    "401": {
+                        "description": "Неавторизованный доступ"
+                    },
+                    "500": {
+                        "description": "Ошибка сервера"
+                    },
+                    "503": {
+                        "description": "Ошибка сервера"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/post/delete/{id}": {
+            "put": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Удаление поста",
+                "description": "Удаление поста по ID",
+                "operationId": "cdd4cd1792016e15a266fe299fd56911",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Идентификатор поста",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "1d535fd6-7521-4cb1-aa6d-031be7123c4d"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешно удален пост"
+                    },
+                    "400": {
+                        "description": "Невалидные данные ввода"
+                    },
+                    "401": {
+                        "description": "Неавторизованный доступ"
+                    },
+                    "500": {
+                        "description": "Ошибка сервера"
+                    },
+                    "503": {
+                        "description": "Ошибка сервера"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/post/get/{id}": {
+            "get": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Получение поста",
+                "description": "Получение поста по ID",
+                "operationId": "db87ce00d76eae9f94daf06ae480c539",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Идентификатор поста",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "1d535fd6-7521-4cb1-aa6d-031be7123c4d"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешно получен пост",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "example": "1d535fd6-7521-4cb1-aa6d-031be7123c4d"
+                                        },
+                                        "text": {
+                                            "type": "string",
+                                            "example": "Lorem ipsum dolor sit amet..."
+                                        },
+                                        "author_user_id": {
+                                            "type": "string",
+                                            "example": "e4d2e6b0-cde2-42c5-aac3-0b8316f21e58"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидные данные ввода"
+                    },
+                    "401": {
+                        "description": "Неавторизованный доступ"
+                    },
+                    "500": {
+                        "description": "Ошибка сервера"
+                    },
+                    "503": {
+                        "description": "Ошибка сервера"
+                    }
+                }
+            }
+        },
+        "/post/feed": {
+            "get": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Лента постов друзей",
+                "description": "Получение ленты постов от друзей пользователя",
+                "operationId": "838247eea0feba4fc4ac37cc75daab8c",
+                "parameters": [
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "description": "Оффсет с которого начинать выдачу",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 0,
+                            "minimum": 0,
+                            "example": 0
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Лимит, ограничивающий кол-во возвращенных сущностей",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10,
+                            "minimum": 1,
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешно получены посты друзей",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "string",
+                                                "example": "1d535fd6-7521-4cb1-aa6d-031be7123c4d"
+                                            },
+                                            "text": {
+                                                "type": "string",
+                                                "example": "Lorem ipsum dolor sit amet..."
+                                            },
+                                            "author_user_id": {
+                                                "type": "string",
+                                                "example": "e4d2e6b0-cde2-42c5-aac3-0b8316f21e58"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидные данные ввода"
+                    },
+                    "401": {
+                        "description": "Неавторизованный доступ"
+                    },
+                    "500": {
+                        "description": "Ошибка сервера"
+                    },
+                    "503": {
+                        "description": "Ошибка сервера"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/user/register": {
             "post": {
                 "tags": [
@@ -459,6 +768,10 @@
         {
             "name": "Friends",
             "description": "Friends"
+        },
+        {
+            "name": "Posts",
+            "description": "Posts"
         },
         {
             "name": "Users",

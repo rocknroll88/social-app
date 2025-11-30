@@ -124,6 +124,9 @@
       <path value="$PROJECT_DIR$/lumen-app/vendor/swagger-api/swagger-ui" />
       <path value="$PROJECT_DIR$/lumen-app/vendor/doctrine/annotations" />
       <path value="$PROJECT_DIR$/lumen-app/vendor/darkaonline/swagger-lume" />
+      <path value="$PROJECT_DIR$/lumen-app/vendor/illuminate/redis" />
+      <path value="$PROJECT_DIR$/lumen-app/vendor/psr/http-message" />
+      <path value="$PROJECT_DIR$/lumen-app/vendor/predis/predis" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.3" />

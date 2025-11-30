@@ -38,7 +38,16 @@ $router->group(['middleware' => 'auth'], function () use ($router) {
     // Друзья
     $router->put('/friend/set/{user_id}', 'FriendController@set');
     $router->put('/friend/delete/{user_id}', 'FriendController@delete');
+    
+    // Посты
+    $router->post('/post/create', 'PostController@create');
+    $router->put('/post/update', 'PostController@update');
+    $router->put('/post/delete/{id}', 'PostController@delete');
+    $router->get('/post/feed', 'PostController@feed');
 });
+
+// Публичные методы для постов (согласно спецификации /post/get не требует auth)
+$router->get('/post/get/{id}', 'PostController@get');
 
 // Swagger Documentation Routes
 $router->get('/api/documentation', function () use ($router) {
