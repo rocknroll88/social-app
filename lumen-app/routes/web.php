@@ -44,6 +44,10 @@ $router->group(['middleware' => 'auth'], function () use ($router) {
     $router->put('/post/update', 'PostController@update');
     $router->put('/post/delete/{id}', 'PostController@delete');
     $router->get('/post/feed', 'PostController@feed');
+    
+    // Диалоги
+    $router->post('/dialog/{user_id}/send', 'DialogController@send');
+    $router->get('/dialog/{user_id}/list', 'DialogController@list');
 });
 
 // Публичные методы для постов (согласно спецификации /post/get не требует auth)

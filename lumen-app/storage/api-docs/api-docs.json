@@ -81,6 +81,142 @@
                 }
             }
         },
+        "/dialog/{user_id}/send": {
+            "post": {
+                "tags": [
+                    "Dialogs"
+                ],
+                "summary": "Отправить сообщение пользователю",
+                "description": "Отправка сообщения пользователю",
+                "operationId": "b7027189d39c8029e2bcb1c4d232bb11",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "path",
+                        "description": "Идентификатор пользователя-получателя",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "e4d2e6b0-cde2-42c5-aac3-0b8316f21e58"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "text"
+                                ],
+                                "properties": {
+                                    "text": {
+                                        "description": "Текст сообщения",
+                                        "type": "string",
+                                        "example": "Привет, как дела?"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Успешно отправлено сообщение"
+                    },
+                    "400": {
+                        "description": "Невалидные данные ввода"
+                    },
+                    "401": {
+                        "description": "Неавторизованный доступ"
+                    },
+                    "500": {
+                        "description": "Ошибка сервера"
+                    },
+                    "503": {
+                        "description": "Ошибка сервера"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/dialog/{user_id}/list": {
+            "get": {
+                "tags": [
+                    "Dialogs"
+                ],
+                "summary": "Получить диалог с пользователем",
+                "description": "Диалог между двумя пользователями",
+                "operationId": "d3b714993bd3e9b9cd2f7143c9806c21",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "path",
+                        "description": "Идентификатор пользователя-собеседника",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "e4d2e6b0-cde2-42c5-aac3-0b8316f21e58"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Диалог между двумя пользователями",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "from": {
+                                                "type": "string",
+                                                "format": "uuid",
+                                                "example": "e4d2e6b0-cde2-42c5-aac3-0b8316f21e58"
+                                            },
+                                            "to": {
+                                                "type": "string",
+                                                "format": "uuid",
+                                                "example": "1d535fd6-7521-4cb1-aa6d-031be7123c4d"
+                                            },
+                                            "text": {
+                                                "type": "string",
+                                                "example": "Привет, как дела?"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидные данные ввода"
+                    },
+                    "401": {
+                        "description": "Неавторизованный доступ"
+                    },
+                    "500": {
+                        "description": "Ошибка сервера"
+                    },
+                    "503": {
+                        "description": "Ошибка сервера"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/friend/set/{user_id}": {
             "put": {
                 "tags": [
@@ -764,6 +900,10 @@
         {
             "name": "Authentication",
             "description": "Authentication"
+        },
+        {
+            "name": "Dialogs",
+            "description": "Dialogs"
         },
         {
             "name": "Friends",
