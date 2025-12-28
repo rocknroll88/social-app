@@ -9,67 +9,67 @@ services:
     working_dir: /var/www
     volumes:
       - ./lumen-app:/var/www
+    ports:
+      - "8090:8090"
     environment:
-      - DB_HOST=coordinator
+      - DB_HOST=db
       - DB_PORT=5432
       - DB_DATABASE=social
       - DB_USERNAME=postgres
       - DB_PASSWORD=secret
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_VHOST=/
+      - RABBITMQ_LOGIN=guest
+      - RABBITMQ_PASSWORD=guest
+      - QUEUE_CONNECTION=database
+      - MAX_POST_FOLLOWERS=500
     depends_on:
-      - coordinator
-      - redis
+      - db
     networks:
       - citusnet
 
-  coordinator:
-    hostname: coordinator
-    image: citusdata/citus:12.1
-    container_name: citus_coordinator
+  db:
+    image: postgres:16
+    container_name: lumen_postgres
     environment:
-      - POSTGRES_DB=social
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=secret
-      - CITUS_NODE_NAME=coordinator
+      POSTGRES_DB: social
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
     ports:
-      - "5434:5432"
+      - "5433:5432"
     volumes:
-      - ./volumes/citus-coordinator:/var/lib/postgresql/data
-      - ./docker/citus/init-coordinator.sql:/docker-entrypoint-initdb.d/init-coordinator.sql
+      - ./volumes/pgmaster:/var/lib/postgresql/data
+      - ./docker/import:/import
+    networks:
+      - citusnet
+
+  pgslave:
+    image: postgres:16
+    container_name: pgslave
+    environment:
+      POSTGRES_PASSWORD: pass
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./volumes/pgslave:/var/lib/postgresql/data
     depends_on:
-      - worker1
-      - worker2
-    networks:
-      - citusnet
+      - db
 
-  worker1:
-    hostname: worker1
-    image: citusdata/citus:12.1
-    container_name: citus_worker1
+  pgasyncslave:
+    image: postgres:16
+    container_name: pgasyncslave
     environment:
-      - POSTGRES_DB=social
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=secret
-      - CITUS_NODE_NAME=worker1
+      POSTGRES_PASSWORD: pass
+    ports:
+      - "25432:5432"
     volumes:
-      - ./volumes/citus-worker1:/var/lib/postgresql/data
-    networks:
-      - citusnet
-
-  worker2:
-    hostname: worker2
-    image: citusdata/citus:12.1
-    container_name: citus_worker2
-    environment:
-      - POSTGRES_DB=social
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=secret
-      - CITUS_NODE_NAME=worker2
-    volumes:
-      - ./volumes/citus-worker2:/var/lib/postgresql/data
-    networks:
-      - citusnet
+      - ./volumes/pgasyncslave:/var/lib/postgresql/data
+    depends_on:
+      - db
 
   nginx:
     image: nginx:stable-alpine
@@ -91,7 +91,6 @@ services:
       - "6379:6379"
     volumes:
       - ./volumes/redis:/data
-    command: redis-server --appendonly yes
     networks:
       - citusnet
 
@@ -106,9 +105,7 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
-      - coordinator
-    networks:
-      - citusnet
+      - db
 
   prometheus:
     image: prom/prometheus
@@ -118,8 +115,6 @@ services:
     volumes:
       - ./volumes/prometheus:/etc/prometheus
       - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - citusnet
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -132,14 +127,28 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
-    networks:
-      - citusnet
+    command:
+      - "--docker_only=true"
+      - "--store_container_labels=true"
+      - "--whitelisted_container_labels=io.kubernetes.container.name,com.docker.compose.service,name,container_name,io.kubernetes.pod.name"
 
   node-exporter:
     image: prom/node-exporter
     container_name: node_exporter
     ports:
       - "9100:9100"
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: lumen_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./volumes/rabbitmq:/var/lib/rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
     networks:
       - citusnet
 

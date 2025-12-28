@@ -34,3 +34,11 @@ grafana:
 
 migrate:
 	$(COMPOSE) exec app php artisan migrate --force
+
+# Запуск WebSocket сервера
+websocket:
+	$(COMPOSE) exec app php artisan websocket:serve --host=0.0.0.0 --port=8090
+
+# Запуск воркера очередей
+queue-worker:
+	$(COMPOSE) exec app php artisan queue:work --connection=database --tries=3 --timeout=90

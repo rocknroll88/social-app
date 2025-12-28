@@ -2,13 +2,26 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\DB;
+use Predis\Client as PredisClient;
 
 class FeedCacheService
 {
     private const FEED_PREFIX = 'user:feed:';
     private const MAX_FEED_SIZE = 1000; // Максимум 1000 постов в ленте
+    
+    private PredisClient $redis;
+    
+    public function __construct()
+    {
+        $this->redis = new PredisClient([
+            'scheme' => 'tcp',
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'port' => env('REDIS_PORT', 6379),
+            'password' => env('REDIS_PASSWORD', null),
+            'database' => env('REDIS_DB', 0),
+        ]);
+    }
 
     /**
      * Получить кеш-ключ для ленты пользователя
@@ -38,18 +51,18 @@ class FeedCacheService
             return 0;
         }
 
-        $redis = Redis::connection();
+        $redis = $this->redis;
         $updatedCount = 0;
 
         foreach ($followers as $followerId) {
             $feedKey = $this->getFeedKey($followerId);
-            
+
             // Добавляем пост в sorted set (score = timestamp для сортировки)
             $redis->zadd($feedKey, $timestamp, $postId);
-            
+
             // Обрезаем ленту до 1000 последних постов
             $redis->zremrangebyrank($feedKey, 0, -(self::MAX_FEED_SIZE + 1));
-            
+
             $updatedCount++;
         }
 
@@ -67,7 +80,7 @@ class FeedCacheService
     public function getFeed(string $userId, int $offset = 0, int $limit = 10): array
     {
         $feedKey = $this->getFeedKey($userId);
-        $redis = Redis::connection();
+        $redis = $this->redis;
 
         // Получаем посты из sorted set в обратном порядке (новые сверху)
         // ZREVRANGE возвращает элементы от самого большого score к наименьшему
@@ -85,7 +98,7 @@ class FeedCacheService
     public function warmUpFeed(string $userId): int
     {
         $feedKey = $this->getFeedKey($userId);
-        $redis = Redis::connection();
+        $redis = $this->redis;
 
         // Очищаем текущий кеш
         $redis->del($feedKey);
@@ -120,8 +133,8 @@ class FeedCacheService
     public function clearFeed(string $userId): bool
     {
         $feedKey = $this->getFeedKey($userId);
-        $redis = Redis::connection();
-        
+        $redis = $this->redis;
+
         return (bool) $redis->del($feedKey);
     }
 
@@ -134,8 +147,8 @@ class FeedCacheService
     public function getFeedSize(string $userId): int
     {
         $feedKey = $this->getFeedKey($userId);
-        $redis = Redis::connection();
-        
+        $redis = $this->redis;
+
         return (int) $redis->zcard($feedKey);
     }
 
@@ -158,13 +171,13 @@ class FeedCacheService
             return 0;
         }
 
-        $redis = Redis::connection();
+        $redis = $this->redis;
         $updatedCount = 0;
 
         foreach ($followers as $followerId) {
             $feedKey = $this->getFeedKey($followerId);
             $removed = $redis->zrem($feedKey, $postId);
-            
+
             if ($removed) {
                 $updatedCount++;
             }
@@ -172,5 +185,26 @@ class FeedCacheService
 
         return $updatedCount;
     }
-}
 
+    /**
+     * Добавить пост в ленту конкретного пользователя
+     *
+     * @param string $userId
+     * @param string $postId
+     * @param int $timestamp
+     * @return bool
+     */
+    public function addPostToUserFeed(string $userId, string $postId, int $timestamp): bool
+    {
+        $feedKey = $this->getFeedKey($userId);
+        $redis = $this->redis;
+
+        // Добавляем пост в sorted set (score = timestamp для сортировки)
+        $redis->zadd($feedKey, $timestamp, $postId);
+
+        // Обрезаем ленту до 1000 последних постов
+        $redis->zremrangebyrank($feedKey, 0, -(self::MAX_FEED_SIZE + 1));
+
+        return true;
+    }
+}

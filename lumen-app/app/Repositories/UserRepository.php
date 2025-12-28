@@ -114,4 +114,18 @@ class UserRepository
 
         return $rows->toArray();
     }
+
+    /**
+     * Найти пользователя по токену
+     *
+     * @param string $token
+     * @return stdClass|null
+     */
+    public function findByToken(string $token): ?stdClass
+    {
+        return DB::table('users')
+            ->select('user_id', 'first_name', 'second_name', 'token')
+            ->where('token', $token)
+            ->first();
+    }
 }

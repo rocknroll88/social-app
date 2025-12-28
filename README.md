@@ -45,12 +45,14 @@ make up
 
 ## 📦 Структура make-команд
 
-| Команда       | Описание                                                       |
-|---------------|----------------------------------------------------------------|
-| `make init`   | Сборка, запуск контейнеров и инициализация БД                 |
-| `make up`     | Запуск контейнеров без пересборки                             |
-| `make down`   | Остановка и удаление контейнеров и сети                       |
-| `make init-db`| Повторная инициализация БД из `init.sql`                      |
+| Команда          | Описание                                                       |
+|------------------|----------------------------------------------------------------|
+| `make init`      | Сборка, запуск контейнеров и инициализация БД                 |
+| `make up`        | Запуск контейнеров без пересборки                             |
+| `make down`      | Остановка и удаление контейнеров и сети                       |
+| `make init-db`   | Повторная инициализация БД из `init.sql`                      |
+| `make websocket` | Запуск WebSocket сервера для real-time уведомлений            |
+| `make queue-worker` | Запуск обработчика очереди для асинхронных задач          |
 
 ---
 
@@ -85,7 +87,7 @@ http://localhost:8080
 
 ```json
 {
-  "user_id": 1
+  "user_id": "uuid"
 }
 ```
 
@@ -97,7 +99,7 @@ http://localhost:8080
 
 ```json
 {
-  "id": 1,
+  "id": "uuid",
   "password": "secret123"
 }
 ```
@@ -118,7 +120,7 @@ http://localhost:8080
 
 ```json
 {
-  "id": 1,
+  "id": "uuid",
   "first_name": "Имя",
   "second_name": "Фамилия",
   "birthdate": "2017-02-01",
@@ -126,3 +128,392 @@ http://localhost:8080
   "city": "Москва"
 }
 ```
+
+---
+
+## 🔔 Real-Time уведомления через WebSocket
+
+Приложение поддерживает real-time уведомления о новых постах друзей через WebSocket соединение.
+
+### Архитектура системы
+
+```
+┌─────────────────┐
+│  HTTP Request   │ Создание поста
+│ (POST /post)    │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ PostController  │
+└────────┬────────┘
+         │
+         ▼
+┌──────────────────────┐
+│ ProcessPostCreation  │ Job для асинхронной обработки
+│      (Queue)         │
+└────────┬─────────────┘
+         │
+         ├─────────────────────────┐
+         │                         │
+         ▼                         ▼
+┌──────────────────┐      ┌──────────────────────┐
+│ FeedCacheService │      │ WebSocketNotification│
+│     (Redis)      │      │   Service (RabbitMQ) │
+└──────────────────┘      └──────────┬───────────┘
+                                     │
+                                     ▼
+                          ┌──────────────────────┐
+                          │   RabbitMQ Exchange  │
+                          │   (Topic, Routing)   │
+                          └──────────┬───────────┘
+                                     │
+                          Routing Key: user.{userId}.notification
+                                     │
+                                     ▼
+                          ┌──────────────────────┐
+                          │   User Queue         │
+                          │  (персональная)      │
+                          └──────────┬───────────┘
+                                     │
+                                     ▼
+                          ┌──────────────────────┐
+                          │  WebSocket Server    │
+                          │   (Ratchet/ReactPHP) │
+                          └──────────┬───────────┘
+                                     │
+                                     ▼
+                          ┌──────────────────────┐
+                          │  WebSocket Client    │
+                          │     (Browser)        │
+                          └──────────────────────┘
+```
+
+### Компоненты системы
+
+#### 1. **WebSocket Server** (Ratchet + ReactPHP)
+- Работает на порту `8090`
+- Обрабатывает WebSocket соединения от клиентов
+- Аутентификация через Bearer токен
+- Подписывается на RabbitMQ очереди пользователей
+- Отправляет сообщения только подключенным клиентам
+
+#### 2. **RabbitMQ с Routing Keys**
+- **Exchange**: `websocket_notifications` (тип: `topic`)
+- **Routing Key**: `user.{userId}.notification`
+- **Очереди**: Создаются динамически для каждого подключенного пользователя
+- **Преимущество**: Сообщения доставляются **только целевым пользователям**
+
+#### 3. **Redis** (кеширование лент)
+- Хранит ленты пользователей в виде sorted sets
+- Ключ: `user:feed:{userId}`
+- Score: timestamp для сортировки
+- Максимум 1000 постов на ленту
+
+#### 4. **Queue Worker** (обработка задач)
+- Обрабатывает задачи из таблицы `jobs`
+- Материализует ленты асинхронно
+- Отправляет WebSocket уведомления
+
+### Запуск Real-Time системы
+
+#### Шаг 1: Запустите WebSocket сервер
+
+```bash
+make websocket
+```
+
+Вы увидите:
+```
+Starting WebSocket server on 0.0.0.0:8090
+WebSocket server started on ws://0.0.0.0:8090
+Subscribe to /post/feed/posted for friend posts updates
+RabbitMQ connection established
+```
+
+#### Шаг 2: Запустите Queue Worker (опционально)
+
+Если нужна асинхронная обработка через очередь:
+
+```bash
+make queue-worker
+```
+
+#### Шаг 3: Подключитесь к WebSocket
+
+Откройте тестовый клиент:
+```
+http://localhost:3002/websocket-client.html
+```
+
+Или используйте свой WebSocket клиент:
+
+```javascript
+const ws = new WebSocket('ws://localhost:8090');
+
+ws.onopen = () => {
+    // Аутентификация
+    ws.send(JSON.stringify({
+        action: 'auth',
+        token: 'YOUR_BEARER_TOKEN'
+    }));
+};
+
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    
+    if (data.action === 'authenticated') {
+        // Подписка на канал
+        ws.send(JSON.stringify({
+            action: 'subscribe',
+            channel: '/post/feed/posted'
+        }));
+    }
+    
+    if (data.channel === '/post/feed/posted') {
+        console.log('New post from friend:', data.message);
+    }
+};
+```
+
+### Формат сообщений
+
+#### Аутентификация
+```json
+{
+  "action": "auth",
+  "token": "your-bearer-token"
+}
+```
+
+**Ответ:**
+```json
+{
+  "action": "authenticated",
+  "user_id": "uuid"
+}
+```
+
+#### Подписка на канал
+```json
+{
+  "action": "subscribe",
+  "channel": "/post/feed/posted"
+}
+```
+
+**Ответ:**
+```json
+{
+  "action": "subscribed",
+  "channel": "/post/feed/posted"
+}
+```
+
+#### Уведомление о новом посте
+```json
+{
+  "channel": "/post/feed/posted",
+  "message": {
+    "id": "post-uuid",
+    "text": "Текст поста",
+    "author_user_id": "author-uuid",
+    "created_at": "2025-12-21T13:18:37+00:00"
+  }
+}
+```
+
+---
+
+## 🛡️ Защита от "Celebrity Effect"
+
+Система включает защиту от перегрузки при создании поста популярным пользователем (с большим количеством подписчиков).
+
+### Механизм работы
+
+1. **Ограничение на количество одновременных обновлений**
+   - Настраивается через переменную окружения `MAX_POST_FOLLOWERS` (по умолчанию: 500)
+   
+2. **Случайная выборка подписчиков**
+   - Если подписчиков больше лимита, выбирается случайная выборка
+   - Остальные получат обновление позже (при следующем запросе ленты)
+
+3. **Асинхронная обработка**
+   - Все обновления происходят в фоне через очередь
+   - Не блокирует HTTP-запрос создания поста
+
+### Настройка в docker-compose.yml
+
+```yaml
+environment:
+  - MAX_POST_FOLLOWERS=500  # Максимум подписчиков для обработки за раз
+```
+
+---
+
+## 🧪 Тестирование WebSocket
+
+### 1. Создайте пользователей и добавьте друга
+
+```bash
+# Создать токен для пользователя
+docker exec lumen_postgres psql -U postgres -d social -c "
+UPDATE users 
+SET token = 'test-token-user1' 
+WHERE user_id = (SELECT user_id FROM users LIMIT 1);
+"
+
+# Добавить связь дружбы
+docker exec lumen_postgres psql -U postgres -d social -c "
+INSERT INTO friends (user_id, friend_id)
+SELECT 
+  (SELECT user_id FROM users WHERE token = 'test-token-user1'),
+  (SELECT user_id FROM users WHERE token IS NULL LIMIT 1)
+ON CONFLICT DO NOTHING;
+"
+```
+
+### 2. Откройте веб-клиент и подключитесь
+
+```
+http://localhost:3002/websocket-client.html
+```
+
+- Введите токен: `test-token-user1`
+- Нажмите "Connect"
+- Нажмите "Subscribe to /post/feed/posted"
+
+### 3. Создайте пост от друга
+
+```bash
+curl -X POST http://localhost:8080/post/create \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer FRIEND_TOKEN" \
+  -d '{
+    "text": "Hello from friend!",
+    "author_user_id": "friend-uuid"
+  }'
+```
+
+### 4. Проверьте уведомление в браузере
+
+Вы должны увидеть:
+```
+[16:18:37] Received: {
+  "channel": "/post/feed/posted",
+  "message": {
+    "id": "...",
+    "text": "Hello from friend!",
+    "author_user_id": "...",
+    "created_at": "..."
+  }
+}
+```
+
+---
+
+## 🔍 Мониторинг и отладка
+
+### RabbitMQ Management UI
+
+```
+http://localhost:15672
+Логин: guest
+Пароль: guest
+```
+
+Здесь можно увидеть:
+- Exchanges
+- Queues
+- Connections
+- Routing Keys
+
+### Redis
+
+Проверка лент пользователей:
+```bash
+# Все ленты
+docker exec lumen_redis redis-cli KEYS "user:feed:*"
+
+# Лента конкретного пользователя
+docker exec lumen_redis redis-cli ZRANGE "user:feed:{userId}" 0 -1 WITHSCORES
+```
+
+### Логи
+
+```bash
+# Логи приложения
+docker logs lumen_app -f
+
+# Логи Nginx
+docker logs lumen_nginx -f
+
+# Логи RabbitMQ
+docker logs lumen_rabbitmq -f
+```
+
+---
+
+## 🐳 Docker Services
+
+| Service        | Port  | Описание                           |
+|----------------|-------|------------------------------------|
+| `app`          | -     | PHP-FPM (Lumen)                   |
+| `nginx`        | 8080  | HTTP сервер                        |
+| `db`           | 5433  | PostgreSQL (master)               |
+| `redis`        | 6379  | Redis (кеширование)               |
+| `rabbitmq`     | 5672  | RabbitMQ (AMQP)                   |
+| `rabbitmq`     | 15672 | RabbitMQ Management UI            |
+| `grafana`      | 3000  | Grafana (мониторинг)              |
+| `prometheus`   | 9090  | Prometheus                        |
+
+---
+
+## 📚 Технологии
+
+- **Backend**: PHP 8.2 + Lumen 10
+- **Database**: PostgreSQL 16
+- **Cache**: Redis 7
+- **Message Broker**: RabbitMQ 3
+- **WebSocket**: Ratchet + ReactPHP
+- **Queue**: Laravel Queue (Database driver)
+- **HTTP Client**: php-amqplib/php-amqplib
+- **Server**: Nginx + PHP-FPM
+- **Containerization**: Docker + Docker Compose
+
+---
+
+## 🔧 Переменные окружения
+
+```env
+# Database
+DB_HOST=db
+DB_PORT=5432
+DB_DATABASE=social
+DB_USERNAME=postgres
+DB_PASSWORD=secret
+
+# Redis
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_PASSWORD=
+
+# RabbitMQ
+RABBITMQ_HOST=rabbitmq
+RABBITMQ_PORT=5672
+RABBITMQ_VHOST=/
+RABBITMQ_LOGIN=guest
+RABBITMQ_PASSWORD=guest
+
+# Queue
+QUEUE_CONNECTION=database
+
+# Celebrity Protection
+MAX_POST_FOLLOWERS=500
+```
+
+---
+
+## 📝 Лицензия
+
+MIT

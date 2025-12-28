@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessPostCreation;
 use App\Repositories\PostRepository;
 use App\Services\FeedCacheService;
+use App\Services\WebSocketNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use OpenApi\Annotations as OA;
 
 class PostController extends Controller
 {
@@ -75,9 +76,10 @@ class PostController extends Controller
 
         $postId = $this->postRepository->create($authUser->user_id, $text);
 
-        // Добавляем пост в кеш лент всех подписчиков
+        // Синхронная обработка для тестирования
         $timestamp = time();
-        $this->feedCacheService->addPostToFollowersFeeds($postId, $authUser->user_id, $timestamp);
+        $job = new ProcessPostCreation($postId, $authUser->user_id, $text, $timestamp);
+        $job->handle($this->feedCacheService, app(WebSocketNotificationService::class));
 
         return response()->json(['post_id' => $postId], 200);
     }
@@ -331,4 +333,3 @@ class PostController extends Controller
         return response()->json($posts, 200);
     }
 }
-

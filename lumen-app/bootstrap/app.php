@@ -63,6 +63,10 @@ $app->configure('app');
 
 $app->configure('database');
 
+$app->configure('queue');
+
+$app->configure('redis');
+
 $app->configure('swagger-lume');
 
 /*

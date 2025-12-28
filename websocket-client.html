@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test Client</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        #messages { height: 300px; overflow-y: auto; background: #f5f5f5; padding: 10px; }
+        input[type="text"] { width: 70%; padding: 8px; margin-right: 10px; }
+        button { padding: 8px 15px; cursor: pointer; }
+        .status { padding: 5px; margin: 5px 0; border-radius: 3px; }
+        .connected { background: #d4edda; color: #155724; }
+        .disconnected { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WebSocket Test Client</h1>
+
+        <div class="section">
+            <h3>Connection</h3>
+            <div id="status" class="status disconnected">Disconnected</div>
+            <input type="text" id="token" placeholder="Bearer token" value="">
+            <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()">Disconnect</button>
+        </div>
+
+        <div class="section">
+            <h3>Subscribe to Feed</h3>
+            <button onclick="subscribeToFeed()">Subscribe to /post/feed/posted</button>
+        </div>
+
+        <div class="section">
+            <h3>Messages</h3>
+            <div id="messages"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+
+        function connect() {
+            const token = document.getElementById('token').value;
+            if (!token) {
+                alert('Please enter a Bearer token');
+                return;
+            }
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            // Always use localhost for WebSocket connection
+            const host = 'localhost';
+            const port = '8090';
+
+            ws = new WebSocket(`${protocol}//${host}:${port}`);
+
+            ws.onopen = function(event) {
+                updateStatus('Connected', 'connected');
+                logMessage('Connected to WebSocket server');
+
+                // Отправляем токен для аутентификации
+                ws.send(JSON.stringify({
+                    action: 'auth',
+                    token: token
+                }));
+            };
+
+            ws.onmessage = function(event) {
+                logMessage('Received: ' + event.data);
+            };
+
+            ws.onclose = function(event) {
+                updateStatus('Disconnected', 'disconnected');
+                logMessage('Connection closed: ' + event.code);
+            };
+
+            ws.onerror = function(error) {
+                updateStatus('Error', 'disconnected');
+                logMessage('WebSocket error: ' + error);
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function subscribeToFeed() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    action: 'subscribe',
+                    channel: '/post/feed/posted'
+                }));
+                logMessage('Subscribed to /post/feed/posted');
+            } else {
+                alert('Not connected to WebSocket');
+            }
+        }
+
+        function updateStatus(text, className) {
+            const status = document.getElementById('status');
+            status.textContent = text;
+            status.className = 'status ' + className;
+        }
+
+        function logMessage(message) {
+            const messages = document.getElementById('messages');
+            const timestamp = new Date().toLocaleTimeString();
+            messages.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+</body>
+</html>

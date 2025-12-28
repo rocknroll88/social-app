@@ -6,7 +6,18 @@ return [
     'connections' => [
         'pgsql' => [
             'driver'   => 'pgsql',
-            'host'     => env('DB_HOST', '127.0.0.1'),
+            'write' => [
+                'host' => [
+                    env('DB_MASTER_HOST', env('DB_HOST', '127.0.0.1')),
+                ],
+            ],
+            'read' => [
+                'host' => array_filter([
+                    env('DB_SLAVE1_HOST'),
+                    env('DB_SLAVE2_HOST'),
+                    env('DB_MASTER_HOST', env('DB_HOST', '127.0.0.1')), // Fallback to master
+                ]),
+            ],
             'port'     => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'social'),
             'username' => env('DB_USERNAME', 'postgres'),
@@ -17,24 +28,6 @@ return [
             'sslmode'  => 'prefer',
         ],
     ],
-    
+
     'migrations' => 'migrations',
-
-    'redis' => [
-        'client' => env('REDIS_CLIENT', 'predis'),
-
-        'default' => [
-            'host' => env('REDIS_HOST', '127.0.0.1'),
-            'password' => env('REDIS_PASSWORD', null),
-            'port' => env('REDIS_PORT', 6379),
-            'database' => env('REDIS_DB', 0),
-        ],
-
-        'cache' => [
-            'host' => env('REDIS_HOST', '127.0.0.1'),
-            'password' => env('REDIS_PASSWORD', null),
-            'port' => env('REDIS_PORT', 6379),
-            'database' => env('REDIS_CACHE_DB', 1),
-        ],
-    ],
 ];

@@ -15,6 +15,8 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         Commands\RouteListCommand::class,
         Commands\WarmUpFeedCacheCommand::class,
+        Commands\WebSocketServerCommand::class,
+        Commands\QueueWorkCommand::class,
     ];
 
     /**
