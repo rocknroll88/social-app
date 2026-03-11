@@ -144,9 +144,10 @@ class DialogController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $messages = $this->dialogRepository->getDialog($authUser->user_id, $user_id);
+        $limit = max(1, min((int) $request->query('limit', 100), 500));
+        $offset = max(0, (int) $request->query('offset', 0));
+        $messages = $this->dialogRepository->getDialog($authUser->user_id, $user_id, $limit, $offset);
 
         return response()->json($messages, 200);
     }
 }
-

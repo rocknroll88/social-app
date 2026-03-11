@@ -62,6 +62,7 @@ $app->singleton(
 $app->configure('app');
 
 $app->configure('database');
+$app->configure('dialog');
 
 $app->configure('queue');
 

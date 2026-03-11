@@ -17,6 +17,11 @@ services:
       - DB_PASSWORD=secret
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - DIALOG_STORAGE=sql
+      - DIALOG_REDIS_PREFIX=dialog
+      - "DIALOG_REDIS_MESSAGE_PREFIX=dialog:message:"
+      - DIALOG_RECIPIENT_CACHE_TTL_SEC=3600
     depends_on:
       - db
       - redis

@@ -14,7 +14,6 @@
       <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/doctrine/lexer" />
       <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/dragonmantank/cron-expression" />
       <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/egulias/email-validator" />
-      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/fakerphp/faker" />
       <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/fruitcake/php-cors" />
       <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/graham-campbell/result-type" />
       <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/guzzlehttp/uri-template" />
@@ -112,10 +111,37 @@
       <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/theseer/tokenizer" />
       <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/vlucas/phpdotenv" />
       <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/voku/portable-ascii" />
-      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/webmozart/assert" />
       <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/illuminate/redis" />
       <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/predis/predis" />
       <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/psr/http-message" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/cboden/ratchet" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/darkaonline/swagger-lume" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/doctrine/annotations" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/enqueue/amqp-lib" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/enqueue/amqp-tools" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/enqueue/dsn" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/evenement/evenement" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/guzzlehttp/psr7" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/paragonie/constant_time_encoding" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/paragonie/random_compat" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/php-amqplib/php-amqplib" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/phpseclib/phpseclib" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/psr/cache" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/psr/http-factory" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/queue-interop/amqp-interop" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/queue-interop/queue-interop" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/ralouphie/getallheaders" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/ratchet/rfc6455" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/react/cache" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/react/dns" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/react/event-loop" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/react/promise" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/react/socket" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/react/stream" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/swagger-api/swagger-ui" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/symfony/routing" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/symfony/yaml" />
+      <excludeFolder url="file://$MODULE_DIR$/lumen-app/vendor/zircote/swagger-php" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

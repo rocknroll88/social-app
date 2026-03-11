@@ -412,6 +412,97 @@ curl -X POST http://localhost:8080/post/create \
 
 ---
 
+## ⚡ ДЗ: In-Memory хранилище для диалогов
+
+В проекте модуль `Dialogs` поддерживает 2 режима хранения:
+
+- `DIALOG_STORAGE=sql` - baseline (PostgreSQL `dialog_messages`)
+- `DIALOG_STORAGE=redis` - In-Memory режим через Redis + Lua UDF (`EVAL`)
+
+В Redis-режиме приложение не делает SQL-запросов в `dialog_messages`, а использует Lua-процедуры:
+
+- отправка сообщения: атомарный `HSET + ZADD` в Lua;
+- чтение диалога: `ZRANGE + HMGET` через Lua.
+
+### 1. Подготовка пользователей для теста
+
+```bash
+# токен для первого пользователя (клиент нагрузки)
+docker exec lumen_postgres psql -U postgres -d social -c "
+UPDATE users SET token = 'dialog-load-token'
+WHERE user_id = (SELECT user_id FROM users ORDER BY user_id LIMIT 1);
+"
+
+# получить пару user_id для теста
+docker exec lumen_postgres psql -U postgres -d social -c "
+SELECT user_id, token FROM users ORDER BY user_id LIMIT 2;
+"
+```
+
+В `TOKEN` используйте `dialog-load-token`, в `PEER_ID` - `user_id` второго пользователя.
+
+### 2. Baseline нагрузочный тест (SQL)
+
+Убедитесь, что в `lumen-app/.env` стоит:
+
+```env
+DIALOG_STORAGE=sql
+```
+
+Запустите тест:
+
+```bash
+k6 run load-tests/dialogs-k6.js \
+  -e BASE_URL=http://localhost:8080 \
+  -e TOKEN=dialog-load-token \
+  -e PEER_ID=005147b5-93a7-4b7f-b8e7-d21fd6561600 \
+  -e VUS=30 \
+  -e DURATION=60s \
+  -e SEND_RATIO=0.3 \
+  -e LIST_LIMIT=100
+```
+
+Сохраните метрики: `http_req_duration (avg/p95)`, `http_req_failed`, `http_reqs`.
+
+### 3. Переключение на In-Memory (Redis + Lua UDF)
+
+Поменяйте в `lumen-app/.env`:
+
+```env
+DIALOG_STORAGE=redis
+```
+
+Перезапустите приложение:
+
+```bash
+docker compose restart app nginx
+```
+
+### 4. Повторный нагрузочный тест
+
+Перед каждым прогоном очищайте данные диалогов, чтобы стартовые условия были одинаковые:
+
+```bash
+# SQL-таблица сообщений
+docker exec lumen_postgres psql -U postgres -d social -c "TRUNCATE TABLE dialog_messages;"
+
+# Redis-ключи диалогов
+docker exec lumen_redis sh -lc 'redis-cli --scan --pattern "dialog:*" | xargs -r redis-cli DEL'
+docker exec lumen_redis sh -lc 'redis-cli --scan --pattern "dialog:message:*" | xargs -r redis-cli DEL'
+docker exec lumen_redis sh -lc 'redis-cli --scan --pattern "user:exists:*" | xargs -r redis-cli DEL'
+```
+
+Запустите тот же `k6`-сценарий с теми же параметрами (`VUS`, `DURATION`, `SEND_RATIO`, `LIST_LIMIT`) и сравните результаты с baseline.
+
+### 5. Шаблон сравнения результатов
+
+| Конфигурация | avg latency | p95 latency | RPS | errors |
+|--------------|-------------|-------------|-----|--------|
+| SQL          |             |             |     |        |
+| Redis Lua    |             |             |     |        |
+
+---
+
 ## 🔍 Мониторинг и отладка
 
 ### RabbitMQ Management UI
