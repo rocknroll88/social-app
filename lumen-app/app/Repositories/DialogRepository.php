@@ -123,6 +123,7 @@ LUA;
         $messageId = Uuid::uuid4()->toString();
 
         DB::table('dialog_messages')->insert([
+            'shard_key' => $this->generateShardKey($fromUserId),
             'id' => $messageId,
             'from_user_id' => $fromUserId,
             'to_user_id' => $toUserId,
@@ -235,5 +236,10 @@ LUA;
         Redis::connection('default')->setex($cacheKey, max(60, $ttl), $exists ? '1' : '0');
 
         return $exists;
+    }
+
+    private function generateShardKey(string $seed): int
+    {
+        return unpack('N', hash('crc32b', $seed, true))[1];
     }
 }

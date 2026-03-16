@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\ChatServiceClient;
+use App\Services\RequestLogger;
 use App\Repositories\UserRepository;
 use App\Services\WebSocketConnectionManager;
 use App\Services\WebSocketNotificationService;
@@ -20,8 +22,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(RequestLogger::class, function () {
+            return new RequestLogger('monolith');
+        });
+
         $this->app->singleton(UserRepository::class, function () {
             return new UserRepository();
+        });
+
+        $this->app->singleton(ChatServiceClient::class, function ($app) {
+            return new ChatServiceClient(
+                (string) config('chat.base_url', 'http://chat-service:8081'),
+                (float) config('chat.timeout_sec', 3.0),
+                $app->make(RequestLogger::class)
+            );
         });
 
         $this->app->singleton(WebSocketConnectionManager::class, function () {

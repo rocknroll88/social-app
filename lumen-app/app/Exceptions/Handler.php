@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Services\RequestLogger;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
@@ -35,6 +36,19 @@ class Handler extends ExceptionHandler
      */
     public function report(Throwable $exception)
     {
+        try {
+            /** @var \Illuminate\Http\Request|null $request */
+            $request = app('request');
+            if ($request) {
+                app(RequestLogger::class)->log('unhandled_exception', [
+                    'request_id' => (string) $request->attributes->get('request_id', ''),
+                    'path' => $request->path(),
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        } catch (Throwable) {
+        }
+
         parent::report($exception);
     }
 

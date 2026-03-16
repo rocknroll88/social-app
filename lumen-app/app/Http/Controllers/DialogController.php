@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Repositories\DialogRepository;
+use App\Exceptions\ChatServiceException;
+use App\Services\ChatServiceClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
 
 class DialogController extends Controller
 {
-    public function __construct(private readonly DialogRepository $dialogRepository)
+    public function __construct(private readonly ChatServiceClient $chatServiceClient)
     {
     }
 
@@ -79,10 +80,12 @@ class DialogController extends Controller
             return response()->json(['error' => 'Cannot send message to yourself'], 400);
         }
 
-        $messageId = $this->dialogRepository->sendMessage($authUser->user_id, $user_id, $text);
+        $requestId = (string) $request->attributes->get('request_id', '');
 
-        if (!$messageId) {
-            return response()->json(['error' => 'Recipient not found'], 400);
+        try {
+            $this->chatServiceClient->sendMessage($requestId, $authUser->user_id, $user_id, $text);
+        } catch (ChatServiceException $exception) {
+            return response()->json(['error' => $exception->getMessage()], $exception->statusCode());
         }
 
         return response()->json(['message' => 'Message sent successfully'], 200);
@@ -146,7 +149,13 @@ class DialogController extends Controller
 
         $limit = max(1, min((int) $request->query('limit', 100), 500));
         $offset = max(0, (int) $request->query('offset', 0));
-        $messages = $this->dialogRepository->getDialog($authUser->user_id, $user_id, $limit, $offset);
+        $requestId = (string) $request->attributes->get('request_id', '');
+
+        try {
+            $messages = $this->chatServiceClient->getDialog($requestId, $authUser->user_id, $user_id, $limit, $offset);
+        } catch (ChatServiceException $exception) {
+            return response()->json(['error' => $exception->getMessage()], $exception->statusCode());
+        }
 
         return response()->json($messages, 200);
     }

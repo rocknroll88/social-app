@@ -61,6 +61,7 @@ $app->singleton(
 
 $app->configure('app');
 
+$app->configure('chat');
 $app->configure('database');
 $app->configure('dialog');
 
@@ -81,9 +82,9 @@ $app->configure('swagger-lume');
 |
 */
 
-// $app->middleware([
-//     App\Http\Middleware\ExampleMiddleware::class
-// ]);
+$app->middleware([
+    App\Http\Middleware\RequestIdMiddleware::class,
+]);
 
 $app->routeMiddleware([
     'auth' => App\Http\Middleware\BearerAuthMiddleware::class,

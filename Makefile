@@ -20,9 +20,15 @@ clean:
 restart:
 	$(COMPOSE) restart
 
+chat-restart:
+	$(COMPOSE) restart chat-service app nginx
+
 # Логи
 logs:
 	$(COMPOSE) logs -f
+
+chat-logs:
+	$(COMPOSE) logs -f chat-service
 
 # Подключение в Postgres
 psql:
