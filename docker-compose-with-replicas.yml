@@ -1,20 +1,23 @@
 version: '3.8'
 
 services:
-  app:
+  app1:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
-    container_name: lumen_app
+    container_name: ha_app1
     working_dir: /var/www
     volumes:
       - ./lumen-app:/var/www
     environment:
       - DB_HOST=db
+      - DB_MASTER_HOST=db
+      - DB_SLAVE1_HOST=postgres-haproxy
       - DB_PORT=5432
       - DB_DATABASE=social
       - DB_USERNAME=postgres
       - DB_PASSWORD=secret
+      - DB_READ_FALLBACK_TO_MASTER=false
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=
@@ -24,22 +27,114 @@ services:
       - DIALOG_RECIPIENT_CACHE_TTL_SEC=3600
       - CHAT_SERVICE_BASE_URL=http://chat-service:8081
       - CHAT_SERVICE_TIMEOUT_SEC=3
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_VHOST=/
+      - RABBITMQ_LOGIN=guest
+      - RABBITMQ_PASSWORD=guest
+      - QUEUE_CONNECTION=database
+      - MAX_POST_FOLLOWERS=500
     depends_on:
       - db
+      - postgres-haproxy
       - redis
       - chat-service
+    networks:
+      - appnet
+
+  app2:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: ha_app2
+    working_dir: /var/www
+    volumes:
+      - ./lumen-app:/var/www
+    environment:
+      - DB_HOST=db
+      - DB_MASTER_HOST=db
+      - DB_SLAVE1_HOST=postgres-haproxy
+      - DB_PORT=5432
+      - DB_DATABASE=social
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=secret
+      - DB_READ_FALLBACK_TO_MASTER=false
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - DIALOG_STORAGE=sql
+      - DIALOG_REDIS_PREFIX=dialog
+      - "DIALOG_REDIS_MESSAGE_PREFIX=dialog:message:"
+      - DIALOG_RECIPIENT_CACHE_TTL_SEC=3600
+      - CHAT_SERVICE_BASE_URL=http://chat-service:8081
+      - CHAT_SERVICE_TIMEOUT_SEC=3
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_VHOST=/
+      - RABBITMQ_LOGIN=guest
+      - RABBITMQ_PASSWORD=guest
+      - QUEUE_CONNECTION=database
+      - MAX_POST_FOLLOWERS=500
+    depends_on:
+      - db
+      - postgres-haproxy
+      - redis
+      - chat-service
+    networks:
+      - appnet
+
+  app3:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: ha_app3
+    working_dir: /var/www
+    volumes:
+      - ./lumen-app:/var/www
+    environment:
+      - DB_HOST=db
+      - DB_MASTER_HOST=db
+      - DB_SLAVE1_HOST=postgres-haproxy
+      - DB_PORT=5432
+      - DB_DATABASE=social
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=secret
+      - DB_READ_FALLBACK_TO_MASTER=false
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - DIALOG_STORAGE=sql
+      - DIALOG_REDIS_PREFIX=dialog
+      - "DIALOG_REDIS_MESSAGE_PREFIX=dialog:message:"
+      - DIALOG_RECIPIENT_CACHE_TTL_SEC=3600
+      - CHAT_SERVICE_BASE_URL=http://chat-service:8081
+      - CHAT_SERVICE_TIMEOUT_SEC=3
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_VHOST=/
+      - RABBITMQ_LOGIN=guest
+      - RABBITMQ_PASSWORD=guest
+      - QUEUE_CONNECTION=database
+      - MAX_POST_FOLLOWERS=500
+    depends_on:
+      - db
+      - postgres-haproxy
+      - redis
+      - chat-service
+    networks:
+      - appnet
 
   chat-service:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
-    container_name: chat_service
+    container_name: ha_chat_service
     working_dir: /var/www
     volumes:
       - ./chat-service:/var/www
     command: php -S 0.0.0.0:8081 -t public public/index.php
     ports:
-      - "8082:8081"
+      - "8086:8081"
     environment:
       - DB_HOST=db
       - DB_PORT=5432
@@ -56,107 +151,116 @@ services:
     depends_on:
       - db
       - redis
+    networks:
+      - appnet
 
   db:
     image: postgres:16
-    container_name: lumen_postgres
+    container_name: ha_db
     environment:
       POSTGRES_DB: social
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: secret
+      POSTGRES_HOST_AUTH_METHOD: trust
+    command: postgres -c wal_level=replica -c max_wal_senders=10 -c max_replication_slots=10 -c hot_standby=on -c hba_file=/etc/postgresql/pg_hba.conf
     ports:
-      - "5433:5432"
+      - "6433:5432"
     volumes:
-      - ./volumes/pgmaster:/var/lib/postgresql/data
+      - ./volumes/ha/pgmaster:/var/lib/postgresql/data
       - ./docker/import:/import
+      - ./docker/postgres/master/init:/docker-entrypoint-initdb.d
+      - ./docker/postgres/master/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    networks:
+      - appnet
 
-  pgslave:
-    image: postgres:16
-    container_name: pgslave
+  pgslave1:
+    build:
+      context: .
+      dockerfile: docker/postgres-slave/Dockerfile
+    container_name: ha_pgslave1
     environment:
-      POSTGRES_PASSWORD: pass
+      PRIMARY_HOST: db
+      REPLICATION_USER: replicator
     ports:
-      - "15432:5432"
+      - "16432:5432"
     volumes:
-      - ./volumes/pgslave:/var/lib/postgresql/data
+      - ./volumes/ha/pgslave1:/var/lib/postgresql/data
     depends_on:
       - db
+    networks:
+      - appnet
 
-  pgasyncslave:
-    image: postgres:16
-    container_name: pgasyncslave
+  pgslave2:
+    build:
+      context: .
+      dockerfile: docker/postgres-slave/Dockerfile
+    container_name: ha_pgslave2
     environment:
-      POSTGRES_PASSWORD: pass
+      PRIMARY_HOST: db
+      REPLICATION_USER: replicator
     ports:
-      - "25432:5432"
+      - "26432:5432"
     volumes:
-      - ./volumes/pgasyncslave:/var/lib/postgresql/data
+      - ./volumes/ha/pgslave2:/var/lib/postgresql/data
     depends_on:
       - db
+    networks:
+      - appnet
+
+  postgres-haproxy:
+    image: haproxy:2.9-alpine
+    container_name: ha_postgres_haproxy
+    ports:
+      - "6432:5432"
+      - "8404:8404"
+    volumes:
+      - ./docker/haproxy/postgres.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - pgslave1
+      - pgslave2
+    networks:
+      - appnet
 
   nginx:
     image: nginx:stable-alpine
-    container_name: lumen_nginx
+    container_name: ha_nginx
     ports:
-      - "8080:80"
+      - "8085:80"
     volumes:
       - ./lumen-app:/var/www
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./docker/nginx/default-replicas.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - app
+      - app1
+      - app2
+      - app3
+    networks:
+      - appnet
 
   redis:
     image: redis:7-alpine
-    container_name: lumen_redis
+    container_name: ha_redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
-      - ./volumes/redis:/data
+      - ./volumes/ha/redis:/data
     command: redis-server --appendonly yes
+    networks:
+      - appnet
 
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: ha_rabbitmq
     ports:
-      - "3000:3000"
+      - "5673:5672"
+      - "15673:15672"
     volumes:
-      - ./volumes/grafana:/var/lib/grafana
+      - ./volumes/ha/rabbitmq:/var/lib/rabbitmq
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    depends_on:
-      - db
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - appnet
 
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./volumes/prometheus:/etc/prometheus
-      - /var/run/docker.sock:/var/run/docker.sock
-
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
-    container_name: cadvisor
-    privileged: true
-    ports:
-      - "8081:8080"
-    volumes:
-      - /:/rootfs:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-    command:
-      - "--docker_only=true"
-      - "--store_container_labels=true"
-      - "--whitelisted_container_labels=io.kubernetes.container.name,com.docker.compose.service,name,container_name,io.kubernetes.pod.name"
-
-  node-exporter:
-    image: prom/node-exporter
-    container_name: node_exporter
-    ports:
-      - "9100:9100"
-
-volumes:
-  pgdata:
+networks:
+  appnet:
+    driver: bridge
