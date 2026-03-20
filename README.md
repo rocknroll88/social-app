@@ -129,6 +129,61 @@ http://localhost:8080
 }
 ```
 
+### Диалоги и счетчики непрочитанных
+
+#### POST `/dialog/{user_id}/send`
+
+Отправляет сообщение пользователю и увеличивает unread-счетчик получателя.
+
+```json
+{
+  "text": "Привет!"
+}
+```
+
+#### GET `/dialog/{user_id}/list`
+
+Возвращает сообщения диалога.
+
+#### GET `/dialog/unread`
+
+Возвращает счетчики непрочитанных сообщений для авторизованного пользователя.
+
+```json
+{
+  "total_unread": 5,
+  "dialogs": [
+    {
+      "user_id": "peer-user-id",
+      "unread_count": 3
+    }
+  ]
+}
+```
+
+Можно передать `?dialog_user_id=<UUID>`, чтобы получить счетчик для конкретного диалога.
+
+#### POST `/dialog/{user_id}/read`
+
+Помечает входящие сообщения от указанного пользователя как прочитанные и обновляет счетчики.
+
+```json
+{
+  "marked_as_read": 3,
+  "dialog_unread": 0,
+  "total_unread": 2
+}
+```
+
+### Консистентность счетчиков
+
+- Источник истины: `dialog_messages.read_at`
+- SAGA/outbox: запись сообщения или `mark read` создает запись в `dialog_counter_sagas` в той же транзакции PostgreSQL
+- Быстрое чтение: материализованная таблица `dialog_counters` + Redis cache
+- Processor: команда `php artisan dialog:saga:process` применяет saga-события к projection
+- Compensation: команда `php artisan dialog:counters:reconcile` пересобирает projection из `dialog_messages`, если saga зависла или упала
+- Read-repair: пока по пользователю есть непримененные saga-события, `/dialog/unread` читает напрямую из source of truth и возвращает `consistency=source_of_truth`
+
 ---
 
 ## 🔔 Real-Time уведомления через WebSocket

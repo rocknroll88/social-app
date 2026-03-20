@@ -51,7 +51,9 @@ function handleRequest(string $method, string $path, string $requestId, JsonLogg
             envValue('DIALOG_STORAGE', 'redis'),
             envValue('DIALOG_REDIS_PREFIX', 'dialog'),
             envValue('DIALOG_REDIS_MESSAGE_PREFIX', 'dialog:message:'),
-            (int) envValue('DIALOG_RECIPIENT_CACHE_TTL_SEC', '3600')
+            envValue('DIALOG_COUNTER_REDIS_PREFIX', 'dialog:counter'),
+            (int) envValue('DIALOG_RECIPIENT_CACHE_TTL_SEC', '3600'),
+            (int) envValue('DIALOG_COUNTER_CACHE_TTL_SEC', '3600')
         );
 
         if ($method === 'POST' && $path === '/internal/dialogs/send') {
@@ -105,6 +107,54 @@ function handleRequest(string $method, string $path, string $requestId, JsonLogg
             ]);
 
             return [200, $messages];
+        }
+
+        if ($method === 'GET' && $path === '/internal/dialogs/counters') {
+            $userId = trim((string) ($_GET['user_id'] ?? ''));
+            $dialogUserId = trim((string) ($_GET['dialog_user_id'] ?? ''));
+
+            if ($userId === '') {
+                return [400, ['error' => 'user_id is required']];
+            }
+
+            $counters = $repository->getUnreadCounters($userId, $dialogUserId !== '' ? $dialogUserId : null);
+
+            $logger->log('dialog_counters_listed', [
+                'request_id' => $requestId,
+                'user_id' => $userId,
+                'dialog_user_id' => $dialogUserId !== '' ? $dialogUserId : null,
+                'total_unread' => $counters['total_unread'],
+                'dialogs_count' => count($counters['dialogs']),
+            ]);
+
+            return [200, $counters];
+        }
+
+        if ($method === 'POST' && $path === '/internal/dialogs/read') {
+            $payload = readJsonBody();
+            $readerUserId = trim((string) ($payload['reader_user_id'] ?? ''));
+            $dialogUserId = trim((string) ($payload['dialog_user_id'] ?? ''));
+
+            if ($readerUserId === '' || $dialogUserId === '') {
+                return [400, ['error' => 'reader_user_id and dialog_user_id are required']];
+            }
+
+            if ($readerUserId === $dialogUserId) {
+                return [400, ['error' => 'Cannot mark self dialog as read']];
+            }
+
+            $result = $repository->markDialogAsRead($readerUserId, $dialogUserId);
+
+            $logger->log('dialog_marked_as_read', [
+                'request_id' => $requestId,
+                'reader_user_id' => $readerUserId,
+                'dialog_user_id' => $dialogUserId,
+                'marked_as_read' => $result['marked_as_read'],
+                'dialog_unread' => $result['dialog_unread'],
+                'total_unread' => $result['total_unread'],
+            ]);
+
+            return [200, $result];
         }
 
         return [404, ['error' => 'Not found']];

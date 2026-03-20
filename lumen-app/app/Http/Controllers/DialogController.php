@@ -159,4 +159,107 @@ class DialogController extends Controller
 
         return response()->json($messages, 200);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/dialog/{user_id}/read",
+     *     summary="Пометить сообщения как прочитанные",
+     *     description="Сбрасывает unread-счетчик текущего пользователя по выбранному диалогу",
+     *     tags={"Dialogs"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="user_id",
+     *         in="path",
+     *         description="Идентификатор собеседника",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Счетчик обновлен"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Неавторизованный доступ"
+     *     ),
+     *     @OA\Response(
+     *         response=503,
+     *         description="Ошибка chat-service"
+     *     )
+     * )
+     */
+    public function read(Request $request, string $user_id): JsonResponse
+    {
+        $authUser = $request->attributes->get('auth_user');
+
+        if (!$authUser) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        if ($authUser->user_id === $user_id) {
+            return response()->json(['error' => 'Cannot mark self dialog as read'], 400);
+        }
+
+        $requestId = (string) $request->attributes->get('request_id', '');
+
+        try {
+            $result = $this->chatServiceClient->markDialogAsRead($requestId, $authUser->user_id, $user_id);
+        } catch (ChatServiceException $exception) {
+            return response()->json(['error' => $exception->getMessage()], $exception->statusCode());
+        }
+
+        return response()->json($result, 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/dialog/unread",
+     *     summary="Получить unread-счетчики",
+     *     description="Возвращает total unread и разбивку по диалогам",
+     *     tags={"Dialogs"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="dialog_user_id",
+     *         in="query",
+     *         description="Необязательный фильтр по собеседнику",
+     *         required=false,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Текущие unread-счетчики"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Неавторизованный доступ"
+     *     ),
+     *     @OA\Response(
+     *         response=503,
+     *         description="Ошибка chat-service"
+     *     )
+     * )
+     */
+    public function unreadCounters(Request $request): JsonResponse
+    {
+        $authUser = $request->attributes->get('auth_user');
+
+        if (!$authUser) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $dialogUserId = trim((string) $request->query('dialog_user_id', ''));
+        $requestId = (string) $request->attributes->get('request_id', '');
+
+        try {
+            $counters = $this->chatServiceClient->getUnreadCounters(
+                $requestId,
+                $authUser->user_id,
+                $dialogUserId !== '' ? $dialogUserId : null
+            );
+        } catch (ChatServiceException $exception) {
+            return response()->json(['error' => $exception->getMessage()], $exception->statusCode());
+        }
+
+        return response()->json($counters, 200);
+    }
 }

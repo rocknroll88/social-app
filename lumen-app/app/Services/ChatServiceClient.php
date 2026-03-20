@@ -68,6 +68,59 @@ class ChatServiceClient
     }
 
     /**
+     * @return array{total_unread:int,dialogs:array<int,array<string,mixed>>,consistency:string}
+     */
+    public function getUnreadCounters(string $requestId, string $userId, ?string $dialogUserId = null): array
+    {
+        $query = [
+            'user_id' => $userId,
+        ];
+
+        if ($dialogUserId !== null && $dialogUserId !== '') {
+            $query['dialog_user_id'] = $dialogUserId;
+        }
+
+        $responseBody = $this->request(
+            $requestId,
+            'GET',
+            '/internal/dialogs/counters',
+            [
+                'query' => $query,
+            ]
+        );
+
+        if (!is_array($responseBody)) {
+            throw new ChatServiceException('Chat service returned invalid response', 503);
+        }
+
+        return $responseBody;
+    }
+
+    /**
+     * @return array{marked_as_read:int,dialog_unread:int,total_unread:int,consistency:string}
+     */
+    public function markDialogAsRead(string $requestId, string $readerUserId, string $dialogUserId): array
+    {
+        $responseBody = $this->request(
+            $requestId,
+            'POST',
+            '/internal/dialogs/read',
+            [
+                'json' => [
+                    'reader_user_id' => $readerUserId,
+                    'dialog_user_id' => $dialogUserId,
+                ],
+            ]
+        );
+
+        if (!is_array($responseBody)) {
+            throw new ChatServiceException('Chat service returned invalid response', 503);
+        }
+
+        return $responseBody;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function request(string $requestId, string $method, string $uri, array $options): array

@@ -48,6 +48,8 @@ $router->group(['middleware' => 'auth'], function () use ($router) {
     // Диалоги
     $router->post('/dialog/{user_id}/send', 'DialogController@send');
     $router->get('/dialog/{user_id}/list', 'DialogController@list');
+    $router->post('/dialog/{user_id}/read', 'DialogController@read');
+    $router->get('/dialog/unread', 'DialogController@unreadCounters');
 });
 
 // Публичные методы для постов (согласно спецификации /post/get не требует auth)

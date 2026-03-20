@@ -17,6 +17,8 @@ class Kernel extends ConsoleKernel
         Commands\WarmUpFeedCacheCommand::class,
         Commands\WebSocketServerCommand::class,
         Commands\QueueWorkCommand::class,
+        Commands\ProcessDialogCounterSagasCommand::class,
+        Commands\ReconcileDialogCountersCommand::class,
     ];
 
     /**
@@ -27,6 +29,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        //
+        $schedule->command('dialog:saga:process --limit=500')->everyMinute()->withoutOverlapping();
+        $schedule->command('dialog:counters:reconcile --limit=100')->everyFiveMinutes()->withoutOverlapping();
     }
 }
